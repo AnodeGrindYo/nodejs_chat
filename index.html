@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+	<meta charset="UTF-8">
+	<title>Node.js Chat</title>
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+	<!-- Optional theme -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+	<!-- Latest compiled and minified JavaScript -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+	<!-- JQuery -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+	<!-- font awesome -->
+	<script src="https://use.fontawesome.com/48f21e6760.js"></script>
+
+	<link rel="stylesheet" type="text/css" href="css/chat.css">
+	<style>
+		#chat_msg
+		{
+			display: block;
+			resize: none;
+			width: 100%;
+			height: 20em;
+			padding: 5%;
+			overflow: scroll;
+			overflow-x: hidden;
+		}
+		.jumbotron
+		{
+			color: white;
+			background: #3E4463;
+		}
+		.marge
+		{
+			margin: 5%;
+		}
+	</style>
+</head>
+<body>
+	<!-- header -->
+	<div class="jumbotron">
+		<h1 class="display-3 text-center">Simple Chat Node.js</h1>
+		<p class="lead text-center" id>ceci est un simple chat codé avec Node.js.</p>
+		<hr class="m-y-md">
+		<p class="text-center">Vous êtes libres d'utiliser ce code comme bon vous semble <br>
+			Adr_G
+		</p>
+	</div>
+	
+	<!-- saisie du pseudo -->
+	<div class="jumbotron" id="saisie_pseudo">
+		<div class="marge">
+			<hr class="m-y-md">
+			<!-- <form action="" id="valid_pseudo"> -->
+				<div class="form-group">
+					<label for="input_pseudo">Pseudo: </label>
+					<input type="text" class="form-control" id="input_pseudo">
+				</div>
+				<button type="button" class="btn btn-primary btn-lg col-md-offset-9 col-md-3 text-center" id="send_pseudo">Valider</button>
+			<!-- </form> -->
+			<hr class="m-y-md">
+		</div>
+	</div>
+
+	<!-- content -->
+	<div class="jumbotron" id="content">
+		<div class="marge">
+			<hr class="m-y-md">
+			<!-- chat -->
+			<div  name="chat_msg" id="chat_msg" readonly></div>
+			<hr class="m-y-md">
+			<!-- envoi de messages -->
+			<!-- <form action="" method="post" accept-charset="utf-8" id="send_msg"> -->
+				<div class="form-group">
+					<label for="input_msg">Votre message</label>
+					<textarea class="form-control" name="input_msg" id="input_msg"></textarea>
+				</div>
+				<button type="button" class="btn btn-primary btn-lg col-md-offset-9 col-md-3 text-center" id="envoi_msg">Envoyer</button>
+			<!-- </form> -->
+			<!-- \envoi de messages -->
+			<hr class="m-y-md">
+		</div>
+	</div>
+	
+	
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+		$(function()
+		{
+			// on établit la connexion socket
+			var socket = io.connect('http://localhost:8080');
+			//$("#content").hide();
+
+			// validation du pseudo
+			$('#send_pseudo').click(function()
+			{
+				//alert($('#input_pseudo').val());
+				if ($('#input_pseudo').val() != '')
+				{
+					socket.emit('valid_pseudo', $('#input_pseudo').val());
+				}
+			});
+
+			// validation du message
+			$('#envoi_msg').click(function()
+			{
+				if($("#input_msg").val() != '')
+				{
+					//alert($("#input_msg").val());
+					socket.emit('send_msg', $("#input_msg").val());
+				}
+			});
+
+			socket.on('conv', function(conv)
+			{
+				if(conv.length != 0)
+				{
+					for(var i = 0; i<conv.length; i++)
+					{
+						mess = $.parseJSON(JSON.stringify(conv[i]));
+						$("#chat_msg").append('<p><span style="color:'+mess.colour+';">'+mess.date+mess.pseudo+"</span> : "+mess.message+"\n</p>");
+						autoScroll();
+					}
+				}
+			});
+
+			// écriture du message
+			socket.on('msg', function(msg)
+			{
+				//alert(JSON.stringify(msg));
+				message = $.parseJSON(JSON.stringify(msg));
+				//alert(message.colour);
+				$("#chat_msg").append('<p><span style="color:'+message.colour+' !important;">'+message.date+message.pseudo+"</span> : "+message.message+"\n</p>");
+				autoScroll();
+			});
+
+			socket.on('new_user_msg', function(new_user_msg)
+			{
+				$("#chat_msg").append("<P>"+new_user_msg+"</p>");
+				autoScroll();
+			});
+
+			socket.on('no_pseudo', function(msg_serv)
+			{
+				alert(msg_serv);
+			});
+
+			function autoScroll()
+			{
+			  var scrolling    = $('#chat_msg');
+			  var height = scrolling[0].scrollHeight;
+			  scrolling.scrollTop(height);
+			};
+		});
+	</script>
+</body>
+</html>
